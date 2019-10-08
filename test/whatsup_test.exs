@@ -20,7 +20,7 @@ defmodule WhatsupTest do
              ) == [
                credentials: [username: "user", password: "pass"],
                framework: %{name: "framework", version: "1.2.3"},
-               date_time: DateTime
+               date_time: &DateTime.utc_now/0
              ]
     end
   end
