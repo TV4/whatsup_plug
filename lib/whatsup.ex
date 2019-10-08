@@ -14,8 +14,10 @@ defmodule Whatsup.Plug do
   end
 
   def call(%Plug.Conn{request_path: "/__status"} = conn, options) do
+    credentials = options[:credentials][:username] <> ":" <> options[:credentials][:password]
+
     with ["Basic " <> auth] <- get_req_header(conn, "authorization"),
-         true <- Plug.Crypto.secure_compare(options[:credentials], Base.decode64!(auth)) do
+         true <- Plug.Crypto.secure_compare(credentials, Base.decode64!(auth)) do
       data = %{
         date: now(options),
         framework: options[:framework],

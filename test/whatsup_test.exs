@@ -8,15 +8,17 @@ defmodule WhatsupTest do
     end
 
     test "require framework" do
-      assert_raise ArgumentError, "framework is missing", fn -> Whatsup.Plug.init(credentials: "user:password") end
+      assert_raise ArgumentError, "framework is missing", fn ->
+        Whatsup.Plug.init(credentials: [username: "user", password: "pass"])
+      end
     end
 
     test "valid init" do
       assert Whatsup.Plug.init(
-               credentials: "user:password",
+               credentials: [username: "user", password: "pass"],
                framework: %{name: "framework", version: "1.2.3"}
              ) == [
-               credentials: "user:password",
+               credentials: [username: "user", password: "pass"],
                framework: %{name: "framework", version: "1.2.3"},
                date_time: DateTime
              ]
@@ -27,7 +29,7 @@ defmodule WhatsupTest do
     test "require authentication" do
       conn =
         conn(:get, "/__status")
-        |> Whatsup.Plug.call(credentials: "user:password")
+        |> Whatsup.Plug.call(credentials: [username: "user", password: "pass"])
 
       assert json_response(conn, 401) == %{"error" => "Not authenticated"}
     end
@@ -35,9 +37,9 @@ defmodule WhatsupTest do
     test "get status" do
       conn =
         conn(:get, "/__status")
-        |> put_req_header("authorization", "Basic " <> Base.encode64("user:password"))
+        |> put_req_header("authorization", "Basic " <> Base.encode64("user:pass"))
         |> Whatsup.Plug.call(
-          credentials: "user:password",
+          credentials: [username: "user", password: "pass"],
           date_time: fn -> ~U[2019-10-04 14:02:07Z] end,
           framework: %{name: "framework", version: "1.2.3"}
         )
