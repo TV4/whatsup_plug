@@ -40,6 +40,8 @@ defmodule Whatsup.Plug do
     end
   end
 
+  def call(conn, _options), do: conn
+
   defp now(options) do
     options[:date_time].()
   end
