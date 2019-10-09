@@ -53,11 +53,9 @@ defmodule Whatsup.Plug do
     librato_token = System.get_env("LIBRATO_TOKEN")
 
     if librato_user && librato_token do
-      codes = ["2xx", "3xx", "4xx", "5xx"]
-
       [_, _, _, error_count] =
         counts =
-        codes
+        ["2xx", "3xx", "4xx", "5xx"]
         |> Enum.map(fn code ->
           {:ok, %HTTPoison.Response{body: body}} =
             options[:http_client].get(
@@ -81,6 +79,7 @@ defmodule Whatsup.Plug do
             |> get_in([Access.at(0), Access.at(0), "count"])
           end
         end)
+        |> IO.inspect(label: :counts)
 
       availability =
         ((1 - error_count / Enum.sum(counts)) * 100.0)
