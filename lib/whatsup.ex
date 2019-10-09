@@ -24,6 +24,7 @@ defmodule Whatsup.Plug do
           framework: options[:framework],
           language: %{name: "elixir", version: System.version()}
         }
+        |> append_environment(options)
         |> append_availability(options)
 
       conn
@@ -46,6 +47,14 @@ defmodule Whatsup.Plug do
 
   defp now(options) do
     options[:date_time].()
+  end
+
+  defp append_environment(data, options) do
+    if Keyword.get(options, :environment) do
+      Map.put(data, :environment, options[:environment].())
+    else
+      data
+    end
   end
 
   defp append_availability(data, options) do

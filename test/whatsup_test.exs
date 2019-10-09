@@ -57,6 +57,25 @@ defmodule WhatsupTest do
              }
     end
 
+    test "custom environment" do
+      conn =
+        conn(:get, "/__status")
+        |> put_req_header("authorization", "Basic " <> Base.encode64("user:pass"))
+        |> Whatsup.Plug.call(
+          credentials: [username: "user", password: "pass"],
+          date_time: fn -> ~U[2019-10-04 14:02:07Z] end,
+          environment: fn -> %{"dyno" => "web.1", "cache_size" => 100} end,
+          framework: %{name: "framework", version: "1.2.3"}
+        )
+
+      assert json_response(conn, 200) == %{
+               "date" => "2019-10-04T14:02:07Z",
+               "environment" => %{"dyno" => "web.1", "cache_size" => 100},
+               "framework" => %{"name" => "framework", "version" => "1.2.3"},
+               "language" => %{"name" => "elixir", "version" => System.version()}
+             }
+    end
+
     test "availability percent" do
       on_exit(fn ->
         System.delete_env("LIBRATO_USER")
