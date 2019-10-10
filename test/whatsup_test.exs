@@ -76,7 +76,7 @@ defmodule WhatsupTest do
              }
     end
 
-    test "availability percent" do
+    test "with availability percent" do
       on_exit(fn ->
         System.delete_env("LIBRATO_USER")
         System.delete_env("LIBRATO_TOKEN")
@@ -147,6 +147,29 @@ defmodule WhatsupTest do
                "framework" => %{"name" => "framework", "version" => "1.2.3"},
                "language" => %{"name" => "elixir", "version" => System.version()}
              }
+    end
+  end
+
+  describe "availability percent" do
+    test "no data" do
+      MockHTTPClient
+      |> expect(:get, 4, fn _url, _headers ->
+        {:ok,
+         %HTTPoison.Response{
+           body: Jason.encode!(%{"measurements" => %{}}),
+           status_code: 200
+         }}
+      end)
+
+      percent =
+        Whatsup.Availability.percent(
+          "librato_user",
+          "librato_token",
+          date_time: fn -> ~U[2019-10-04 14:02:07Z] end,
+          http_client: MockHTTPClient
+        )
+
+      assert percent == "0"
     end
   end
 

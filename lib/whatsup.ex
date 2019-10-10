@@ -1,3 +1,43 @@
+defmodule Whatsup.Availability do
+  def percent(librato_user, librato_token, options) do
+    [_, _, _, error_count] =
+      counts =
+      ["2xx", "3xx", "4xx", "5xx"]
+      |> Enum.map(fn code ->
+        {:ok, %HTTPoison.Response{body: body}} =
+          options[:http_client].get(
+            "https://metrics-api.librato.com/v1/metrics/router.status.#{code}?start_time=#{
+              DateTime.to_unix(options[:date_time].()) - 86400
+            }&end_time=#{
+              options[:date_time].()
+              |> DateTime.to_unix()
+            }&resolution=86400",
+            authorization:
+              "Basic " <>
+                Base.encode64(librato_user <> ":" <> librato_token)
+          )
+
+        {:ok, data} = Jason.decode(body)
+
+        measurements = Map.get(data, "measurements")
+
+        if map_size(measurements) == 0 do
+          0
+        else
+          measurements
+          |> Map.values()
+          |> get_in([Access.at(0), Access.at(0), "count"])
+        end
+      end)
+
+    with total when total > 0 <- Enum.sum(counts) do
+      ((1 - error_count / total) * 100.0)
+      |> Float.round(2)
+    end
+    |> to_string()
+  end
+end
+
 defmodule Whatsup.Plug do
   import Plug.Conn
 
@@ -62,41 +102,11 @@ defmodule Whatsup.Plug do
     librato_token = System.get_env("LIBRATO_TOKEN")
 
     if librato_user && librato_token do
-      [_, _, _, error_count] =
-        counts =
-        ["2xx", "3xx", "4xx", "5xx"]
-        |> Enum.map(fn code ->
-          {:ok, %HTTPoison.Response{body: body}} =
-            options[:http_client].get(
-              "https://metrics-api.librato.com/v1/metrics/router.status.#{code}?start_time=#{
-                DateTime.to_unix(now(options)) - 86400
-              }&end_time=#{now(options) |> DateTime.to_unix()}&resolution=86400",
-              authorization:
-                "Basic " <>
-                  Base.encode64(librato_user <> ":" <> librato_token)
-            )
-
-          {:ok, data} = Jason.decode(body)
-
-          measurements = Map.get(data, "measurements")
-
-          if map_size(measurements) == 0 do
-            0
-          else
-            measurements
-            |> Map.values()
-            |> get_in([Access.at(0), Access.at(0), "count"])
-          end
-        end)
-        |> IO.inspect(label: :counts)
-
-      availability =
-        ((1 - error_count / Enum.sum(counts)) * 100.0)
-        |> Float.round(2)
-        |> to_string()
-
       data
-      |> Map.put("availability_percent", availability)
+      |> Map.put(
+        "availability_percent",
+        Whatsup.Availability.percent(librato_user, librato_token, options)
+      )
     else
       data
     end
