@@ -169,7 +169,7 @@ defmodule WhatsupTest do
           http_client: MockHTTPClient
         )
 
-      assert percent == "0"
+      assert percent == "100.0"
     end
   end
 

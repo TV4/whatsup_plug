@@ -33,6 +33,8 @@ defmodule Whatsup.Availability do
     with total when total > 0 <- Enum.sum(counts) do
       ((1 - error_count / total) * 100.0)
       |> Float.round(2)
+    else
+      _ -> 100.0
     end
     |> to_string()
   end
