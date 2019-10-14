@@ -4,30 +4,36 @@ defmodule Whatsup.Availability do
       counts =
       ["2xx", "3xx", "4xx", "5xx"]
       |> Enum.map(fn code ->
-        {:ok, %HTTPoison.Response{body: body}} =
-          options[:http_client].get(
-            "https://metrics-api.librato.com/v1/metrics/router.status.#{code}?start_time=#{
-              DateTime.to_unix(options[:date_time].()) - 86400
-            }&end_time=#{
-              options[:date_time].()
-              |> DateTime.to_unix()
-            }&resolution=86400",
-            authorization:
-              "Basic " <>
-                Base.encode64(librato_user <> ":" <> librato_token)
-          )
+        Task.async(fn ->
+          {:ok, %HTTPoison.Response{body: body}} =
+            options[:http_client].get(
+              "https://metrics-api.librato.com/v1/metrics/router.status.#{code}?start_time=#{
+                DateTime.to_unix(options[:date_time].()) - 86400
+              }&end_time=#{
+                options[:date_time].()
+                |> DateTime.to_unix()
+              }&resolution=86400",
+              authorization:
+                "Basic " <>
+                  Base.encode64(librato_user <> ":" <> librato_token)
+            )
 
-        {:ok, data} = Jason.decode(body)
+          {:ok, data} = Jason.decode(body)
 
-        measurements = Map.get(data, "measurements")
+          measurements = Map.get(data, "measurements")
 
-        if map_size(measurements) == 0 do
-          0
-        else
-          measurements
-          |> Map.values()
-          |> get_in([Access.at(0), Access.at(0), "count"])
-        end
+          if map_size(measurements) == 0 do
+            0
+          else
+            measurements
+            |> Map.values()
+            |> get_in([Access.at(0), Access.at(0), "count"])
+          end
+        end)
+      end)
+      |> Task.yield_many()
+      |> Enum.map(fn
+        {%Task{}, {:ok, result}} -> result
       end)
 
     with total when total > 0 <- Enum.sum(counts) do
