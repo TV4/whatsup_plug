@@ -58,7 +58,7 @@ defmodule Whatsup.Plug do
       raise ArgumentError, "framework is missing"
     end
 
-    Keyword.merge(options, date_time: &DateTime.utc_now/0, http_client: HTTPoison)
+    Keyword.merge([date_time: &DateTime.utc_now/0, http_client: HTTPoison], options)
   end
 
   def call(%Plug.Conn{request_path: "/__status"} = conn, options) do
