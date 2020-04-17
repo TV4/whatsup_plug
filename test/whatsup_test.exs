@@ -48,14 +48,14 @@ defmodule WhatsupTest do
           credentials: [username: "user", password: "pass"],
           date_time: fn -> ~U[2019-10-04 14:02:07Z] end,
           framework: %{name: "framework", version: "1.2.3"},
-          birthday: "2017-07-06"
+          service: %{birthday: "2017-07-06"}
         )
 
       assert json_response(conn, 200) == %{
                "date" => "2019-10-04T14:02:07Z",
                "framework" => %{"name" => "framework", "version" => "1.2.3"},
                "language" => %{"name" => "elixir", "version" => System.version()},
-               "birthday" => "2017-07-06"
+               "service" => %{"birthday" => "2017-07-06"}
              }
     end
 

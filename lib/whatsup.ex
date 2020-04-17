@@ -72,9 +72,9 @@ defmodule Whatsup.Plug do
           framework: options[:framework],
           language: %{name: "elixir", version: System.version()}
         }
+        |> append_service(options)
         |> append_environment(options)
         |> append_availability(options)
-        |> append_birthday(options)
 
       conn
       |> put_resp_header("content-type", "application/json")
@@ -98,6 +98,14 @@ defmodule Whatsup.Plug do
     options[:date_time].()
   end
 
+  defp append_service(data, options) do
+    if Keyword.get(options, :service) do
+      Map.put(data, :service, options[:service])
+    else
+      data
+    end
+  end
+
   defp append_environment(data, options) do
     if Keyword.get(options, :environment) do
       Map.put(data, :environment, options[:environment].())
@@ -116,14 +124,6 @@ defmodule Whatsup.Plug do
         "availability_percent",
         Whatsup.Availability.percent(librato_user, librato_token, options)
       )
-    else
-      data
-    end
-  end
-
-  defp append_birthday(data, options) do
-    if Keyword.get(options, :birthday) do
-      Map.put(data, :birthday, options[:birthday])
     else
       data
     end
