@@ -74,6 +74,7 @@ defmodule Whatsup.Plug do
         }
         |> append_environment(options)
         |> append_availability(options)
+        |> append_birthday(options)
 
       conn
       |> put_resp_header("content-type", "application/json")
@@ -115,6 +116,14 @@ defmodule Whatsup.Plug do
         "availability_percent",
         Whatsup.Availability.percent(librato_user, librato_token, options)
       )
+    else
+      data
+    end
+  end
+
+  defp append_birthday(data, options) do
+    if Keyword.get(options, :birthday) do
+      Map.put(data, :birthday, options[:birthday])
     else
       data
     end
