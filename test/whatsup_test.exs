@@ -168,13 +168,7 @@ defmodule WhatsupTest do
          }}
       end)
 
-      percent =
-        Whatsup.Availability.percent(
-          "librato_user",
-          "librato_token",
-          date_time: fn -> ~U[2019-10-04 14:02:07Z] end,
-          http_client: MockHTTPClient
-        )
+      percent = Whatsup.Availability.percent("librato_user", "librato_token", ~U[2019-10-04 14:02:07Z], MockHTTPClient)
 
       assert percent == "100.0"
     end

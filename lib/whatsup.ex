@@ -1,21 +1,18 @@
 defmodule Whatsup.Availability do
-  def percent(librato_user, librato_token, options) do
+  @metrics_resolution 86400
+
+  def percent(librato_user, librato_token, date_time, http_client) do
     [_, _, _, error_count] =
       counts =
       ["2xx", "3xx", "4xx", "5xx"]
       |> Enum.map(fn code ->
         Task.async(fn ->
           {:ok, %HTTPoison.Response{body: body}} =
-            options[:http_client].get(
+            http_client.get(
               "https://metrics-api.librato.com/v1/metrics/router.status.#{code}?start_time=#{
-                DateTime.to_unix(options[:date_time].()) - 86400
-              }&end_time=#{
-                options[:date_time].()
-                |> DateTime.to_unix()
-              }&resolution=86400",
-              authorization:
-                "Basic " <>
-                  Base.encode64(librato_user <> ":" <> librato_token)
+                DateTime.to_unix(date_time) - @metrics_resolution
+              }&end_time=#{DateTime.to_unix(date_time)}&resolution=#{@metrics_resolution}",
+              authorization: "Basic " <> Base.encode64(librato_user <> ":" <> librato_token)
             )
 
           {:ok, data} = Jason.decode(body)
@@ -62,14 +59,14 @@ defmodule Whatsup.Plug do
   end
 
   def call(%Plug.Conn{request_path: "/__status"} = conn, options) do
-    credentials = options[:credentials][:username] <> ":" <> options[:credentials][:password]
+    credentials = option(options, :credentials)[:username] <> ":" <> option(options, :credentials)[:password]
 
     with ["Basic " <> auth] <- get_req_header(conn, "authorization"),
          true <- Plug.Crypto.secure_compare(credentials, Base.decode64!(auth)) do
       data =
         %{
           date: now(options),
-          framework: options[:framework],
+          framework: option(options, :framework),
           language: %{name: "elixir", version: System.version()}
         }
         |> append_service(options)
@@ -95,22 +92,31 @@ defmodule Whatsup.Plug do
   def call(conn, _options), do: conn
 
   defp now(options) do
-    options[:date_time].()
+    option(options, :date_time)
   end
 
   defp append_service(data, options) do
-    if Keyword.get(options, :service) do
-      Map.put(data, :service, options[:service])
+    if service = option(options, :service) do
+      Map.put(data, :service, service)
     else
       data
     end
   end
 
   defp append_environment(data, options) do
-    if Keyword.get(options, :environment) do
-      Map.put(data, :environment, options[:environment].())
+    if environment = option(options, :environment) do
+      Map.put(data, :environment, environment)
     else
       data
+    end
+  end
+
+  defp option(options, key) do
+    Keyword.get(options, key)
+    |> case do
+      nil -> nil
+      option when is_function(option) -> option.()
+      option -> option
     end
   end
 
@@ -122,7 +128,12 @@ defmodule Whatsup.Plug do
       data
       |> Map.put(
         "availability_percent",
-        Whatsup.Availability.percent(librato_user, librato_token, options)
+        Whatsup.Availability.percent(
+          librato_user,
+          librato_token,
+          option(options, :date_time),
+          option(options, :http_client)
+        )
       )
     else
       data
