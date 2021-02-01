@@ -1,7 +1,7 @@
 defmodule WhatsupTest do
   use ExUnit.Case
   use Plug.Test
-  import Mox
+  import Hammox
 
   defmock(MockHTTPClient, for: HTTPoison.Base)
 
@@ -95,7 +95,8 @@ defmodule WhatsupTest do
           {:ok,
            %HTTPoison.Response{
              body: Jason.encode!(%{"measurements" => %{"app-name" => [%{"count" => 3}]}}),
-             status_code: 200
+             status_code: 200,
+             request: %HTTPoison.Request{url: ""}
            }}
         end
       )
@@ -106,7 +107,8 @@ defmodule WhatsupTest do
           {:ok,
            %HTTPoison.Response{
              body: Jason.encode!(%{"measurements" => %{}}),
-             status_code: 200
+             status_code: 200,
+             request: %HTTPoison.Request{url: ""}
            }}
         end
       )
@@ -117,7 +119,8 @@ defmodule WhatsupTest do
           {:ok,
            %HTTPoison.Response{
              body: Jason.encode!(%{"measurements" => %{"app-name" => [%{"count" => 1}]}}),
-             status_code: 200
+             status_code: 200,
+             request: %HTTPoison.Request{url: ""}
            }}
         end
       )
@@ -128,7 +131,8 @@ defmodule WhatsupTest do
           {:ok,
            %HTTPoison.Response{
              body: Jason.encode!(%{"measurements" => %{"app-name" => [%{"count" => 1}]}}),
-             status_code: 200
+             status_code: 200,
+             request: %HTTPoison.Request{url: ""}
            }}
         end
       )
@@ -159,7 +163,8 @@ defmodule WhatsupTest do
         {:ok,
          %HTTPoison.Response{
            body: Jason.encode!(%{"measurements" => %{}}),
-           status_code: 200
+           status_code: 200,
+           request: %HTTPoison.Request{url: ""}
          }}
       end)
 
