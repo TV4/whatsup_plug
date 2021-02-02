@@ -59,10 +59,9 @@ defmodule Whatsup.Plug do
   end
 
   def call(%Plug.Conn{request_path: "/__status"} = conn, options) do
-    credentials = option(options, :credentials)[:username] <> ":" <> option(options, :credentials)[:password]
+    credentials = option(options, :credentials)
 
-    with ["Basic " <> auth] <- get_req_header(conn, "authorization"),
-         true <- Plug.Crypto.secure_compare(credentials, Base.decode64!(auth)) do
+    with %Plug.Conn{halted: false} <- Plug.BasicAuth.basic_auth(conn, credentials) do
       data =
         %{
           date: now(options),
@@ -80,12 +79,6 @@ defmodule Whatsup.Plug do
         Jason.encode!(data)
       )
       |> halt
-    else
-      _ ->
-        conn
-        |> put_resp_header("content-type", "application/json")
-        |> send_resp(401, Jason.encode!(%{error: "Not authenticated"}))
-        |> halt
     end
   end
 

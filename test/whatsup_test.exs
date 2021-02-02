@@ -37,7 +37,7 @@ defmodule WhatsupTest do
         conn(:get, "/__status")
         |> Whatsup.Plug.call(credentials: [username: "user", password: "pass"])
 
-      assert json_response(conn, 401) == %{"error" => "Not authenticated"}
+      assert response(conn, 401) == "Unauthorized"
     end
 
     test "get status" do
@@ -174,11 +174,15 @@ defmodule WhatsupTest do
     end
   end
 
-  defp json_response(%Plug.Conn{resp_body: body, status: status_code}, status_code) do
-    Jason.decode!(body)
+  defp response(%Plug.Conn{resp_body: body, status: status_code}, status_code) do
+    body
   end
 
-  defp json_response(%Plug.Conn{resp_body: body, status: status}, given) do
+  defp response(%Plug.Conn{resp_body: body, status: status}, given) do
     raise "expected response with status #{given}, got: #{status}, with body:\n#{body}"
+  end
+
+  defp json_response(conn, status_code) do
+    response(conn, status_code) |> Jason.decode!()
   end
 end
