@@ -172,6 +172,16 @@ defmodule WhatsupTest do
 
       assert percent == "100.0"
     end
+
+    test "no reply" do
+      MockHTTPClient
+      |> expect(:get, 4, fn _url, _headers ->
+        {:error, %HTTPoison.Error{id: nil, reason: :closed}}
+      end)
+
+      percent = Whatsup.Availability.percent("librato_user", "librato_token", ~U[2019-10-04 14:02:07Z], MockHTTPClient)
+      assert percent == "100.0"
+    end
   end
 
   defp response(%Plug.Conn{resp_body: body, status: status_code}, status_code) do

@@ -24,7 +24,7 @@ defmodule Whatsup.MixProject do
     [
       {:plug, "~> 1.8"},
       {:jason, "~> 1.1"},
-      {:httpoison, "~> 1.6"},
+      {:httpoison, "~> 1.7"},
       {:hammox, "~> 0.4", only: :test},
       {:mix_test_watch, "~> 1.0", only: :test}
     ]

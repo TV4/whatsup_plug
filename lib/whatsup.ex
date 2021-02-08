@@ -7,24 +7,25 @@ defmodule Whatsup.Availability do
       ["2xx", "3xx", "4xx", "5xx"]
       |> Enum.map(fn code ->
         Task.async(fn ->
-          {:ok, %HTTPoison.Response{body: body}} =
-            http_client.get(
-              "https://metrics-api.librato.com/v1/metrics/router.status.#{code}?start_time=#{
-                DateTime.to_unix(date_time) - @metrics_resolution
-              }&end_time=#{DateTime.to_unix(date_time)}&resolution=#{@metrics_resolution}",
-              authorization: "Basic " <> Base.encode64(librato_user <> ":" <> librato_token)
-            )
+          with {:ok, %HTTPoison.Response{body: body}} <-
+                 http_client.get(
+                   "https://metrics-api.librato.com/v1/metrics/router.status.#{code}?start_time=#{
+                     DateTime.to_unix(date_time) - @metrics_resolution
+                   }&end_time=#{DateTime.to_unix(date_time)}&resolution=#{@metrics_resolution}",
+                   authorization: "Basic " <> Base.encode64(librato_user <> ":" <> librato_token)
+                 ),
+               {:ok, data} <- Jason.decode(body) do
+            measurements = Map.get(data, "measurements")
 
-          {:ok, data} = Jason.decode(body)
-
-          measurements = Map.get(data, "measurements")
-
-          if map_size(measurements) == 0 do
-            0
+            if map_size(measurements) == 0 do
+              0
+            else
+              measurements
+              |> Map.values()
+              |> get_in([Access.at(0), Access.at(0), "count"])
+            end
           else
-            measurements
-            |> Map.values()
-            |> get_in([Access.at(0), Access.at(0), "count"])
+            _ -> 0
           end
         end)
       end)
